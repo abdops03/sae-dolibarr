@@ -1,0 +1,43 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: sae-dolibarr-postgres
+
+    environment:
+      POSTGRES_DB: dolibarr
+      POSTGRES_USER: dolibarr
+      POSTGRES_PASSWORD: dolibarr_dev_password
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - dolibarr_network
+
+  dolibarr:
+    build:
+      context: ./docker/dolibarr
+      dockerfile: Dockerfile
+
+    image: sae-dolibarr:24.0.1
+    container_name: sae-dolibarr
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "8080:80"
+
+    volumes:
+      - dolibarr_documents:/var/lib/dolibarr/documents
+
+    networks:
+      - dolibarr_network
+
+networks:
+  dolibarr_network:
+
+volumes:
+  postgres_data:
+  dolibarr_documents:
