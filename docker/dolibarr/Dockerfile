@@ -1,3 +1,4 @@
+
 FROM php:8.2-apache
 
 ARG DOLIBARR_VERSION=24.0.1
