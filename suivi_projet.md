@@ -1,6 +1,6 @@
 # Suivi du projet SAE 51 : Installation d'un ERP/CRM Dolibarr
 
-* **Membres du binôme :** [Abdoualye Gaye] (Chef de projet), [AEl Khalki Amine] (Rédacteur technique, architecte réseaux)
+* **Membres du binôme :** [Abdoualye Gaye] (Chef de projet), [AEl Khalki Amine] (Rédacteur technique, architecte réseaux) , Walid 
 * **Groupe :** BUT3 R&T - [Groupe B]
 * **Dépôt Git :** `sae-dolibarr`
 
