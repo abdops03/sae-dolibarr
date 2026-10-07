@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
         intl \
         pdo \
         pdo_pgsql \
+        pgsql \
         zip \
         opcache \
     && rm -rf /var/lib/apt/lists/*
@@ -36,9 +37,13 @@ RUN mkdir -p /var/lib/dolibarr/documents \
     && chown -R www-data:www-data /var/www/html/dolibarr \
     && chown -R www-data:www-data /var/lib/dolibarr
 
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/dolibarr|' \
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/dolibarr/htdocs|' \
     /etc/apache2/sites-available/000-default.conf
 
+COPY docker-entrypoint.sh /usr/local/bin/dolibarr-entrypoint.sh
+RUN chmod +x /usr/local/bin/dolibarr-entrypoint.sh
+
+ENTRYPOINT ["dolibarr-entrypoint.sh"]
 EXPOSE 80
 
 CMD ["apache2-foreground"]
