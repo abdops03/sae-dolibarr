@@ -1,0 +1,13 @@
+# Sauvegardes générées automatiquement
+backups/*.dump
+backups/*.tar.gz
+
+# Fichiers temporaires éventuels
+*.tmp
+
+# Fichiers système Windows
+Thumbs.db
+Desktop.ini
+
+# Fichiers système macOS
+.DS_Store
