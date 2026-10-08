@@ -54,7 +54,7 @@ services:
 
     # Accès à Dolibarr depuis le PC
     ports:
-      - "8080:80"
+      - "8090:80"
 
     # Conservation des documents générés ou importés dans Dolibarr
     volumes:

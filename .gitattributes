@@ -1,0 +1,15 @@
+# Normalise automatiquement les fichiers texte dans Git
+* text=auto
+
+# Scripts Shell : toujours en format Unix LF
+*.sh text eol=lf
+
+# Fichiers Docker / YAML : format Unix LF
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Fichiers de configuration du dépôt
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.env.example text eol=lf

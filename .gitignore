@@ -11,3 +11,10 @@ Desktop.ini
 
 # Fichiers système macOS
 .DS_Store
+
+# Variables sensibles locales
+.env
+
+# Sauvegardes générées automatiquement
+backups/*.dump
+backups/*.tar.gz
