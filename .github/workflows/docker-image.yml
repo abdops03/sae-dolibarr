@@ -35,13 +35,13 @@ jobs:
 
       - name: Vérification du fichier CSV
         run: |
-          test -f tiers_fictifs.csv
+          test -f tiers.csv
 
-          header=$(head -n 1 tiers_fictifs.csv)
+          header=$(head -n 1 tiers.csv)
 
           test "$header" = "type;nom;email;telephone;adresse;code_postal;ville;pays"
 
-          test $(tail -n +2 tiers_fictifs.csv | wc -l) -gt 0
+          test $(tail -n +2 tiers.csv | wc -l) -gt 0
 
           echo "CSV valide"
 
