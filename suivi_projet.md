@@ -1133,36 +1133,7 @@ C'est cette table que `import_csv.sh` remplit directement pour notre POC.
 | Workflow Docker | vérification des chemins dans le dépôt | correction du chemin du Dockerfile | fonctionnement d'une CI |
 
 ---
-
-## 10. Captures à intégrer
-
-Les captures doivent servir de **preuves techniques** et non simplement d'illustration.
-
-Dossier conseillé :
-
-```text
-docs/captures/
-```
-
-Captures pertinentes :
-
-| Capture | Ce qu'elle prouve |
-|---|---|
-| `01-docker-compose-ps.png` | deux conteneurs actifs, PostgreSQL `healthy`, port `8090` |
-| `02-tiers-dolibarr.png` | les cinq Tiers visibles dans Dolibarr |
-| `03-import-sans-doublons.png` | deuxième import avec `Déjà présent` |
-| `04-base-dolibarr.png` | requête sur `llx_user` / `llx_societe` ou nombre de tables |
-| `05-pra-restauration.png` | `Nombre de tiers restaurés : 5` |
-| `06-github-actions.png` | workflow GitHub Actions réussi |
-
-Exemple :
-
-```markdown
-![Validation du PRA](docs/captures/05-pra-restauration.png)
-```
-
-Il n'est pas nécessaire de capturer chaque commande. Une capture est conservée lorsqu'elle apporte une preuve utile à l'évaluation.
-
+---
 ---
 
 ## 11. Sources techniques et traçabilité
@@ -1184,24 +1155,7 @@ Les sources indiquées dans le dépôt doivent correspondre aux ressources réel
 
 Une assistance IA a été utilisée ponctuellement comme **outil d'aide au diagnostic, à la recherche de pistes et à la relecture**. Les solutions retenues ont ensuite été vérifiées, testées et adaptées dans l'environnement du projet.
 
-### En-tête à prévoir dans les fichiers techniques
 
-Conformément à la consigne de l'enseignant, les fichiers techniques doivent indiquer leurs sources.
-
-Exemple pour un script Bash :
-
-```bash
-#!/bin/bash
-# SAE 51 - Dolibarr
-# Rôle : import automatisé des Tiers.
-# Sources :
-# - Documentation PostgreSQL : https://www.postgresql.org/docs/16/
-# - Documentation Dolibarr : https://github.com/Dolibarr/dolibarr
-# - Supports de cours BUT3 pour Git/GitHub
-# - Assistance IA ponctuelle pour diagnostic/relecture ; solution testée et adaptée par l'équipe.
-```
-
-Les sources doivent être adaptées fichier par fichier : il ne faut pas déclarer une documentation qui n'a pas réellement servi au fichier concerné.
 
 ---
 
@@ -1219,21 +1173,7 @@ Les sources doivent être adaptées fichier par fichier : il ne faut pas déclar
 | `restore.sh` | ✅ Terminé | 5 Tiers restaurés |
 | PRA | ✅ Validé | destruction + reconstruction + restauration |
 | GitHub Actions | ✅ Fonctionnel | build Docker validé |
-| Documentation | 🟡 Finalisation | captures, README et en-têtes de sources |
 
----
-
-## 13. Travaux restant à finaliser
-
-La partie technique principale est terminée. Les derniers travaux concernent essentiellement le rendu :
-
-- intégrer les captures de preuve dans `docs/captures/` ;
-- finaliser le `README.md` pour qu'un enseignant puisse cloner et exécuter le projet ;
-- vérifier les en-têtes de sources de chaque script, Dockerfile et workflow ;
-- relire les rôles et contributions de chaque membre ;
-- préparer la démonstration orale : installation, import, sauvegarde/restauration et explication des problèmes rencontrés.
-
----
 
 ## 14. Bilan
 
