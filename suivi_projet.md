@@ -994,4 +994,36 @@ Le script `restore.sh` est également présent et préparé afin de permettre la
 
 Enfin, le workflow GitHub Actions a été corrigé afin de prendre en compte l'emplacement réel du Dockerfile dans le projet et de permettre la construction automatique de l'image Docker.
 
+<<<<<<< Updated upstream
 À la fin de la séance, les principales fonctionnalités d'installation, d'importation et de sauvegarde sont donc opérationnelles. 
+=======
+La prochaine étape sera donc de stabiliser l'image Docker Dolibarr et le fichier `docker-compose.yml`, puis de commencer l'automatisation de l'importation des données et des sauvegardes.
+
+
+# Suivi du projet SAE-Dolibarr
+
+## Séance du 08/10/2026
+
+### Objectifs de la séance
+
+- Finaliser et tester l'installation automatisée de Dolibarr.
+- Vérifier le fonctionnement des conteneurs Docker.
+- Tester l'import automatisé des données CSV.
+- Vérifier l'ajout et la gestion des Tiers.
+- Tester le mécanisme de sauvegarde.
+- Préparer les tests de restauration et de PRA.
+
+### Travaux réalisés
+
+#### 1. Vérification de l'environnement Docker
+
+Les deux conteneurs du projet ont été démarrés avec Docker Compose :
+
+- `sae-dolibarr`
+- `sae-dolibarr-postgres`
+
+La commande suivante a permis de vérifier leur état :
+
+```bash
+docker compose ps
+>>>>>>> Stashed changes
