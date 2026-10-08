@@ -35,16 +35,15 @@ jobs:
 
       - name: Vérification du fichier CSV
         run: |
-          test -f tiers.csv
+          test -f data/csv/tiers.csv
 
-          header=$(head -n 1 tiers.csv)
+          header=$(head -n 1 data/csv/tiers.csv)
 
           test "$header" = "type;nom;email;telephone;adresse;code_postal;ville;pays"
 
-          test $(tail -n +2 tiers.csv | wc -l) -gt 0
+          test $(tail -n +2 data/csv/tiers.csv | wc -l) -gt 0
 
           echo "CSV valide"
-
       # -------------------------
       # Build de l'image Dolibarr
       # -------------------------
