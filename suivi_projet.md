@@ -692,3 +692,240 @@ Les principaux points restant à finaliser sont :
 * documenter les commandes nécessaires au déploiement pour le binôme.
 
 La prochaine étape sera donc de stabiliser l'image Docker Dolibarr et le fichier `docker-compose.yml`, puis de commencer l'automatisation de l'importation des données et des sauvegardes.
+
+
+Séance du 08/10/2026 — Suite
+
+3. Tests de l'installation automatisée
+
+Une fois la configuration Docker finalisée, nous avons testé le script d'installation automatique :
+
+./scripts/install.sh
+
+Le script effectue plusieurs vérifications et opérations :
+
+- vérification de la présence de Docker ;
+- vérification de Docker Compose ;
+- construction de l'image Dolibarr ;
+- démarrage des conteneurs Dolibarr et PostgreSQL ;
+- attente de la disponibilité de PostgreSQL ;
+- vérification de l'installation existante de Dolibarr ;
+- vérification du nombre de tables et d'utilisateurs ;
+- affichage de l'état final des services.
+
+Le test s'est terminé avec succès.
+
+Résultats obtenus :
+
+Nombre de tables Dolibarr : 283
+Nombre d'utilisateurs Dolibarr : 3
+
+Les deux conteneurs étaient opérationnels :
+
+sae-dolibarr            Up
+sae-dolibarr-postgres   Up (healthy)
+
+L'installation automatisée peut donc être utilisée pour déployer l'environnement du projet.
+
+Le script conserve les volumes Docker existants afin de ne pas supprimer les données lors d'un redémarrage ou d'une nouvelle exécution.
+
+---
+
+4. Test de l'importation automatisée des Tiers
+
+Le script d'importation :
+
+./scripts/import_csv.sh
+
+a été testé avec le fichier CSV contenant les données fictives des clients et fournisseurs.
+
+Le fichier utilise les colonnes :
+
+type;nom;email;telephone;adresse;code_postal;ville;pays
+
+Le script vérifie dans un premier temps que PostgreSQL est disponible.
+
+Il lit ensuite chaque ligne du fichier CSV et détermine s'il s'agit d'un client ou d'un fournisseur.
+
+Une vérification par adresse e-mail est effectuée avant chaque insertion afin d'éviter les doublons.
+
+Lors du test, les cinq premiers Tiers étaient déjà présents dans la base. Le script les a donc détectés comme existants :
+
+Déjà présent : Entreprise Alpha
+Déjà présent : Entreprise Beta
+Déjà présent : Entreprise Gamma
+Déjà présent : Fournisseur Delta
+Déjà présent : Fournisseur Epsilon
+
+Un nouveau fournisseur a ensuite été ajouté :
+
+Fournisseur Cisco
+
+La vérification finale a montré la présence de 7 Tiers dans la table "llx_societe".
+
+Les données sont donc correctement transférées du fichier CSV vers PostgreSQL et deviennent accessibles dans Dolibarr.
+
+---
+
+5. Test d'ajout direct d'un Tiers dans PostgreSQL
+
+Un test complémentaire a été réalisé directement depuis le terminal Ubuntu afin de vérifier la structure de la table "llx_societe".
+
+Un nouveau client de test a été ajouté :
+
+Entreprise Test
+
+La vérification SQL a confirmé son insertion dans la base.
+
+Cette manipulation a également permis de vérifier le fonctionnement des champs permettant de distinguer les clients et les fournisseurs :
+
+client = 1
+fournisseur = 0
+
+pour un client, et inversement pour un fournisseur.
+
+Ce test confirme également que les données importées directement dans PostgreSQL sont bien prises en compte par Dolibarr.
+
+---
+
+6. Mise en place et test des sauvegardes
+
+Le script :
+
+./scripts/backup.sh
+
+a été utilisé afin de tester la sauvegarde des données.
+
+La sauvegarde génère deux éléments principaux :
+
+1. une sauvegarde PostgreSQL de la base Dolibarr ;
+2. une archive des documents Dolibarr.
+
+Les fichiers générés lors du test du 08/10/2026 sont :
+
+backups/database_2026-10-08_15-51-19.dump
+backups/documents_2026-10-08_15-51-19.tar.gz
+
+Tailles constatées :
+
+database_2026-10-08_15-51-19.dump       1.1M
+documents_2026-10-08_15-51-19.tar.gz    320B
+
+Le script s'est terminé par :
+
+Sauvegarde terminée avec succès
+
+La sauvegarde de la base et celle des documents sont donc fonctionnelles.
+
+---
+
+7. Tests du workflow CI/CD avec GitHub Actions
+
+Un workflow GitHub Actions a également été mis en place afin d'automatiser la vérification de la construction de l'image Docker.
+
+Le workflow est situé dans :
+
+.github/workflows/docker-image.yml
+
+Le principe est de déclencher automatiquement le workflow lors d'un "push" ou d'une "pull_request" sur la branche "main".
+
+Le workflow utilise notamment :
+
+actions/checkout
+
+afin de récupérer le contenu du dépôt dans l'environnement GitHub Actions.
+
+Une première version du workflow utilisait :
+
+docker build . --file Dockerfile
+
+Cette version a échoué car le "Dockerfile" du projet n'est pas situé à la racine du dépôt.
+
+Le Dockerfile utilisé par le projet se trouve dans :
+
+docker/dolibarr/Dockerfile
+
+Le workflow a donc été corrigé afin d'utiliser le bon contexte de construction :
+
+docker build ./docker/dolibarr \
+  --file ./docker/dolibarr/Dockerfile
+
+Cette correction permet au workflow de construire l'image Docker utilisée par le projet.
+
+Les tests du workflow CI/CD ont permis de vérifier que le dépôt peut être récupéré automatiquement et que la construction de l'image Docker peut être intégrée dans une chaîne d'intégration continue.
+
+Cette étape améliore la reproductibilité du projet et permet de détecter automatiquement certaines erreurs de configuration Docker lors des modifications du dépôt.
+
+---
+
+8. Gestion du dépôt Git
+
+L'ensemble du projet est versionné dans le dépôt GitHub :
+
+abdops03/sae-dolibarr
+
+La branche principale utilisée est :
+
+main
+
+Le dépôt contient notamment :
+
+.github/workflows/
+backups/
+data/
+docker/
+docs/
+scripts/
+README.md
+suivi_projet.md
+docker-compose.yml
+
+Les fichiers contenant des informations sensibles ne sont pas versionnés.
+
+En particulier, le fichier :
+
+.env
+
+est exclu du dépôt grâce au fichier ".gitignore".
+
+Les sauvegardes générées automatiquement sont également exclues du versionnement.
+
+---
+
+9. État du projet à la fin de la séance
+
+À la fin de la séance du 08/10/2026, les éléments suivants ont été réalisés et testés :
+
+Élément| État
+Dockerisation de Dolibarr| ✅
+Conteneur PostgreSQL| ✅
+Conteneur Dolibarr| ✅
+Communication Dolibarr/PostgreSQL| ✅
+Extension PHP PostgreSQL| ✅
+Configuration automatique "conf.php"| ✅
+Script "install.sh"| ✅ Testé
+Import CSV automatisé| ✅ Testé
+Gestion clients/fournisseurs| ✅
+Détection des doublons| ✅
+Ajout d'un Tiers| ✅ Testé
+Sauvegarde PostgreSQL| ✅ Testée
+Sauvegarde des documents| ✅ Testée
+Git/GitHub| ✅
+Workflow GitHub Actions / CI| ✅ Testé
+Protection du ".env"| ✅
+Restauration complète / PRA| 🔄 À finaliser
+
+Difficultés rencontrées
+
+Plusieurs problèmes ont été rencontrés et corrigés au cours du projet :
+
+- absence initiale de l'extension PHP "pgsql" ;
+- problème de persistance du fichier "conf.php" lors de la recréation du conteneur ;
+- mise en place du script "docker-entrypoint.sh" pour automatiser la configuration ;
+- problème d'apostrophe dans une donnée CSV, notamment avec "Jeanne d'Arc" ;
+- nécessité de gérer les doublons lors des imports successifs ;
+- première configuration incorrecte du workflow GitHub Actions à cause de l'emplacement du Dockerfile ;
+- nécessité d'utiliser un fichier ".env" pour les variables sensibles du script d'installation.
+
+Ces problèmes ont été corrigés et les tests concernés sont désormais concluants.
+
