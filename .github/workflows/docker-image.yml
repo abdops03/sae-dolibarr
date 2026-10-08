@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: CI/CD SAE Dolibarr
 
 on:
   push:
@@ -7,13 +7,130 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
-
+  tests:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      # -------------------------
+      # Récupération du dépôt
+      # -------------------------
 
-    - name: Build the Docker image
-      run: docker build ./docker/dolibarr --file ./docker/dolibarr/Dockerfile --tag sae-dolibarr:${{ github.sha }}
+      - name: Récupération du dépôt
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # Tests syntaxe des scripts
+      # -------------------------
+
+      - name: Vérification syntaxe Bash
+        run: |
+          bash -n scripts/install.sh
+          bash -n scripts/import_csv.sh
+          bash -n scripts/backup.sh
+          bash -n scripts/restore.sh
+
+      # -------------------------
+      # Test du fichier CSV
+      # -------------------------
+
+      - name: Vérification du fichier CSV
+        run: |
+          test -f tiers_fictifs.csv
+
+          header=$(head -n 1 tiers_fictifs.csv)
+
+          test "$header" = "type;nom;email;telephone;adresse;code_postal;ville;pays"
+
+          test $(tail -n +2 tiers_fictifs.csv | wc -l) -gt 0
+
+          echo "CSV valide"
+
+      # -------------------------
+      # Build de l'image Dolibarr
+      # -------------------------
+
+      - name: Build image Dolibarr
+        run: |
+          docker build ./docker/dolibarr \
+            --file ./docker/dolibarr/Dockerfile \
+            --tag sae-dolibarr:${{ github.sha }}
+
+      # -------------------------
+      # Démarrage Docker Compose
+      # -------------------------
+
+      - name: Démarrage Docker Compose
+        run: |
+          docker compose up -d
+
+      # -------------------------
+      # Attente PostgreSQL
+      # -------------------------
+
+      - name: Attente PostgreSQL
+        run: |
+          for i in {1..30}; do
+            if docker exec sae-dolibarr-postgres \
+              pg_isready -U dolibarr -d dolibarr; then
+              echo "PostgreSQL est prêt"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "PostgreSQL n'est pas disponible"
+          exit 1
+
+      # -------------------------
+      # Vérification des conteneurs
+      # -------------------------
+
+      - name: Vérification des conteneurs
+        run: |
+          docker compose ps
+
+          docker inspect sae-dolibarr \
+            --format '{{.State.Status}}' | grep -q "running"
+
+          docker inspect sae-dolibarr-postgres \
+            --format '{{.State.Status}}' | grep -q "running"
+
+      # -------------------------
+      # Vérification PHP
+      # -------------------------
+
+      - name: Vérification extensions PHP PostgreSQL
+        run: |
+          docker exec sae-dolibarr php -m | grep -q "pgsql"
+          docker exec sae-dolibarr php -m | grep -q "pdo_pgsql"
+
+          echo "Extensions PostgreSQL PHP présentes"
+
+      # -------------------------
+      # Test PostgreSQL
+      # -------------------------
+
+      - name: Test connexion PostgreSQL
+        run: |
+          docker exec sae-dolibarr-postgres \
+            psql -U dolibarr -d dolibarr \
+            -c "SELECT 1;"
+
+      # -------------------------
+      # Affichage des logs en cas d'erreur
+      # -------------------------
+
+      - name: Logs Docker en cas d'échec
+        if: failure()
+        run: |
+          docker compose logs
+
+      # -------------------------
+      # Nettoyage
+      # -------------------------
+
+      - name: Arrêt Docker
+        if: always()
+        run: |
+          docker compose down
