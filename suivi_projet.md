@@ -1,691 +1,54 @@
-# Suivi du projet SAE 51 : Installation d'un ERP/CRM Dolibarr
+# Suivi de projet — SAE 51 Dolibarr
 
-* **Membres du binôme :** [Abdoualye Gaye] (Chef de projet), [AEl Khalki Amine] (Rédacteur technique, architecte réseaux) , Walid 
-* **Groupe :** BUT3 R&T - [Groupe B]
-* **Dépôt Git :** `sae-dolibarr`
-
----
-
-## Séance 1 - [22/09/2026]
-
-### Objectifs prévus pour la séance
-
-* Initialiser le dépôt Git et son arborescence de travail.
-* Débuter la phase 1 : installation manuelle/test de Dolibarr et de PostgreSQL sur une machine Debian.
-
-### Travail réalisé
-
-* Initialisation du dépôt Git du projet `sae-dolibarr`.
-* Mise en place du suivi de projet avec le fichier `suivi_projet.md`.
-* Installation et vérification d'Apache2 sur la machine Debian/WSL.
-* Vérification du fonctionnement du serveur web avec :
-
-  ```bash
-  curl -I http://localhost
-  ```
-* Vérification de l'écoute d'Apache sur le port 80 avec :
-
-  ```bash
-  sudo ss -ltnp | grep ':80'
-  ```
-* Vérification du service Apache :
-
-  ```bash
-  sudo systemctl status apache2
-  ```
-* Vérification de PHP :
-
-  ```bash
-  php --version
-  ```
-* Vérification du module PHP chargé par Apache :
-
-  ```bash
-  apache2ctl -M | grep php
-  ```
-* Vérification des extensions PHP nécessaires avec :
-
-  ```bash
-  php -m
-  ```
-* Téléchargement de **Dolibarr 24.0.1** au format `.tgz`.
-* Extraction et vérification du contenu de Dolibarr, notamment du répertoire `htdocs`.
-* Analyse de la configuration Apache et identification du `DocumentRoot` :
-
-  ```text
-  /var/www/html
-  ```
-* Installation de Dolibarr sous :
-
-  ```text
-  /var/www/html/dolibarr
-  ```
-* Mise en place du répertoire de documents Dolibarr :
-
-  ```text
-  /var/lib/dolibarr/documents
-  ```
-* Attribution des droits au serveur web avec `www-data`.
-* Lancement de l'interface d'installation web de Dolibarr.
-* Configuration manuelle de Dolibarr 24.0.1.
-* Configuration de PostgreSQL comme SGBD.
-* Création du compte administrateur Dolibarr et d'un compte utilisateur.
-* Vérification de l'accès à PostgreSQL avec :
-
-  ```bash
-  psql -h localhost -p 5432 -U dolibarr -d dolibarr
-  ```
-* Vérification de la table des utilisateurs :
-
-  ```sql
-  SELECT rowid, login, lastname, firstname, employee, admin, statut
-  FROM llx_user;
-  ```
-* Découverte du fonctionnement de la base Dolibarr et du rôle du champ `rowid`.
-* Vérification de la table `llx_societe` et constat qu'aucun tiers n'était encore présent :
-
-  ```sql
-  SELECT rowid, nom, client, fournisseur, status
-  FROM llx_societe
-  LIMIT 10;
-  ```
+> **Formation :** BUT3 Réseaux & Télécommunications — Groupe B  
+> **Projet :** Automatisation, dockerisation et reprise d'activité d'un ERP/CRM Dolibarr  
+> **Dépôt Git :** `sae-dolibarr`  
+> **Équipe :** Abdoulaye, Amine, Hoilid Zeghoubi  
+> **Dernière séance documentée :** 07/10/2026
 
 ---
 
-## Séance 2 - [28/09/2026]
+## 1. Présentation du projet
 
-### Objectifs prévus pour la séance
+Le projet consiste à réaliser un **POC autour de Dolibarr** en partant d'une installation manuelle, puis en rendant l'environnement reproductible et automatisé.
 
-* Poursuivre la découverte de Dolibarr.
-* Étudier les possibilités d'importation des données existantes.
-* Commencer à réfléchir à l'automatisation de l'installation.
-* Préparer la future dockerisation de Dolibarr et PostgreSQL.
-* Organiser le dépôt Git pour les futurs scripts d'installation, d'importation et de sauvegarde.
+Le cahier des charges nous amène progressivement à mettre en place :
 
-### Travail réalisé
+- une installation manuelle initiale de Dolibarr afin d'en comprendre le fonctionnement ;
+- une base de données PostgreSQL ;
+- une architecture Docker séparant l'application et le SGBD ;
+- un script `install.sh` pour automatiser l'installation ;
+- un script `import_csv.sh` pour importer les Tiers (clients et fournisseurs) ;
+- un script `backup.sh` pour sauvegarder la base et les documents ;
+- un script `restore.sh` pour restaurer l'environnement dans le cadre du PRA ;
+- un dépôt Git/GitHub pour versionner le projet ;
+- un workflow GitHub Actions pour vérifier automatiquement la construction de l'image Docker ;
+- une documentation permettant de comprendre, reproduire et tester le projet.
 
-#### 1. Découverte de l'importation des données
-
-* Accès au menu **Outils → Importations / Exportations** de Dolibarr.
-
-* Découverte de l'assistant d'importation intégré.
-
-* Identification des différents lots de données pouvant être importés, notamment :
-
-  * utilisateurs et groupes ;
-  * adhérents ;
-  * tiers ;
-  * contacts et adresses ;
-  * comptes bancaires ;
-  * commerciaux ;
-  * commandes ;
-  * lignes de commandes ;
-  * événements et autres données.
-
-* Étude du format CSV attendu par Dolibarr pour l'importation des utilisateurs.
-
-* Préparation d'un exemple de données utilisateur permettant de tester l'importation CSV.
-
-#### 2. Étude de la base PostgreSQL
-
-* Connexion directe à la base `dolibarr` avec PostgreSQL.
-
-* Observation des tables créées par Dolibarr.
-
-* Consultation de la table :
-
-  ```text
-  llx_user
-  ```
-
-* Observation des utilisateurs présents dans la base :
-
-  * `admin`
-  * `usertest`
-  * `modou.diop`
-
-* Identification du champ `rowid` comme identifiant interne des enregistrements.
-
-* Consultation de la table :
-
-  ```text
-  llx_societe
-  ```
-
-* Constat qu'aucun tiers n'était encore présent dans cette table.
-
-#### 3. Comparaison des deux méthodes d'importation
-
-Deux possibilités prévues dans le cahier des charges ont été étudiées :
-
-**Méthode 1 : importation via Dolibarr**
+### 1.1 Architecture finale
 
 ```text
-CSV
- ↓
-Menu Outils
- ↓
-Importation Dolibarr
- ↓
-Tables Dolibarr
+                        Utilisateur
+                            |
+                            | http://localhost:8090
+                            v
+                  +----------------------+
+                  |      Dolibarr        |
+                  | Apache + PHP 8.2     |
+                  | Dolibarr 24.0.1      |
+                  +----------+-----------+
+                             |
+                             | réseau Docker Compose
+                             v
+                  +----------------------+
+                  |    PostgreSQL 16     |
+                  | Base : dolibarr      |
+                  +----------------------+
 ```
 
-Cette méthode est relativement simple et permet à Dolibarr de contrôler l'importation, mais elle nécessite une intervention dans l'interface.
+Les deux services sont séparés afin de faciliter la maintenance, la persistance des données et la reconstruction de l'environnement.
 
-**Méthode 2 : importation directe dans PostgreSQL**
-
-```text
-CSV
- ↓
-Script d'importation
- ↓
-PostgreSQL
- ↓
-Tables llx_*
-```
-
-Cette méthode est plus complexe car il faut comprendre précisément la structure de la base Dolibarr et les relations entre les tables, mais elle présente un intérêt pour l'automatisation demandée dans le cahier des charges.
-
-#### 4. Préparation de la dockerisation
-
-Une première arborescence de travail a été créée dans le dépôt :
-
-```text
-sae-dolibarr/
-├── backups/
-├── data/
-│   └── csv/
-├── docker/
-│   ├── dolibarr/
-│   └── postgres/
-├── docs/
-└── scripts/
-```
-
-Cette organisation est destinée à accueillir progressivement :
-
-* les fichiers liés aux conteneurs Docker ;
-* les fichiers CSV provenant de l'ancien ERP/CRM ;
-* les scripts d'installation ;
-* les scripts d'importation ;
-* les sauvegardes ;
-* la documentation du projet.
-
-#### 5. Vérification de Git
-
-* Vérification de l'état du dépôt :
-
-  ```bash
-  git status
-  ```
-* Vérification de l'historique :
-
-  ```bash
-  git log --oneline -3
-  ```
-* Confirmation que la branche de travail est :
-
-  ```text
-  test
-  ```
-* Confirmation que la branche locale est synchronisée avec :
-
-  ```text
-  origin/test
-  ```
-
-#### 6. Préparation de Docker
-
-* Vérification de Docker Desktop sous Windows.
-* Docker est installé et fonctionnel côté Windows :
-
-  ```text
-  Docker version 29.8.0
-  Docker Compose version v5.5.1
-  ```
-* Constat que Docker n'est pas encore accessible depuis la distribution WSL utilisée pour le projet.
-* Identification de la nécessité d'activer l'intégration **Docker Desktop / WSL2** avant de commencer la dockerisation.
-
-### État d'avancement à la fin de la séance
-
-La phase de découverte et d'installation manuelle de Dolibarr est fonctionnelle.
-
-L'environnement actuel permet :
-
-```text
-Apache
-   ↓
-Dolibarr 24.0.1
-   ↓
-PostgreSQL
-```
-
-La prochaine étape sera de mettre en place progressivement une architecture Docker séparant :
-
-```text
-┌─────────────────┐
-│    Dolibarr     │
-│  Apache + PHP   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   PostgreSQL    │
-│      SGBD       │
-└─────────────────┘
-```
-
-Puis seront développés les scripts prévus par le cahier des charges :
-
-* `install.sh` pour automatiser l'installation ;
-* `import_csv.sh` pour automatiser l'importation des données ;
-* une procédure de sauvegarde/restauration permettant de répondre au besoin de PRA.
-
-## Séance 3 - [05/10/2026]
-
-### Objectifs prévus pour la séance
-
-* Commencer concrètement la dockerisation de Dolibarr et PostgreSQL.
-* Mettre en place une architecture avec deux conteneurs séparés.
-* Créer notre propre `Dockerfile` pour Dolibarr plutôt que d'utiliser directement une image Dolibarr préexistante.
-* Créer un fichier `docker-compose.yml` permettant d'orchestrer les différents services.
-* Vérifier la communication entre Dolibarr et PostgreSQL.
-* Tester l'accès à Dolibarr depuis le navigateur.
-* Commencer à résoudre les problèmes liés à la configuration Apache et aux anciens services installés sur la machine.
-* Versionner les fichiers Docker dans le dépôt Git afin de permettre au binôme de travailler sur la même configuration.
-
-### Travail réalisé
-
-#### 1. Vérification de l'environnement Docker
-
-Docker a été vérifié depuis l'environnement Linux/WSL2.
-
-Versions utilisées :
-
-```text
-Docker version 29.8.0
-Docker Compose version v5.5.1
-```
-
-Une différence mineure de version Docker existe avec la machine du binôme, mais cette différence ne bloque pas l'utilisation du projet :
-
-```text
-Machine d'Abdoulaye : Docker 29.8.0
-Machine du binôme : Docker 29.8.1
-```
-
-Le projet utilise Docker Compose afin de limiter l'impact de ces différences de version.
-
-#### 2. Choix de l'architecture Docker
-
-Conformément au cahier des charges, le choix a été fait de séparer Dolibarr et PostgreSQL dans deux conteneurs.
-
-Architecture retenue :
-
-```text
-                  Docker Compose
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-          ▼                         ▼
-┌───────────────────┐     ┌───────────────────┐
-│     Dolibarr      │     │    PostgreSQL     │
-│                   │     │                   │
-│ Apache + PHP      │────▶│ PostgreSQL 16     │
-│ Dolibarr 24.0.1   │     │                   │
-└───────────────────┘     └───────────────────┘
-          │
-          │ port publié
-          ▼
-     localhost:8090
-```
-
-Cette architecture permet de respecter la séparation entre l'application ERP/CRM et son SGBD.
-
-Elle facilite également :
-
-* la maintenance des services ;
-* les sauvegardes de la base de données ;
-* le remplacement d'un service indépendamment de l'autre ;
-* la reproduction de l'environnement sur une autre machine.
-
-#### 3. Création de notre propre Dockerfile
-
-Un `Dockerfile` a été créé dans :
-
-```text
-docker/dolibarr/Dockerfile
-```
-
-L'objectif est de construire nous-mêmes l'image Docker de Dolibarr.
-
-L'image repose sur une base Debian avec Apache et PHP.
-
-Les principales étapes du Dockerfile sont :
-
-```text
-Image de base
-     ↓
-Installation d'Apache
-     ↓
-Installation de PHP et des extensions nécessaires
-     ↓
-Téléchargement de Dolibarr
-     ↓
-Extraction des fichiers
-     ↓
-Installation dans /var/www/html/dolibarr
-     ↓
-Configuration des droits
-     ↓
-Lancement d'Apache
-```
-
-Cette approche répond à l'objectif du cahier des charges de créer un environnement reproductible et automatisable.
-
-#### 4. Problème rencontré lors du téléchargement de Dolibarr
-
-Une première URL GitHub utilisée pour récupérer Dolibarr 24.0.1 renvoyait une erreur `404 Not Found`.
-
-Test réalisé :
-
-```bash
-wget -S --spider https://github.com/Dolibarr/dolibarr/releases/download/24.0.1/dolibarr-24.0.1.zip
-```
-
-Résultat :
-
-```text
-HTTP/1.1 404 Not Found
-```
-
-Une autre source officielle de téléchargement a ensuite été testée :
-
-```text
-https://www.dolibarr.org/files/stable/standard/dolibarr-24.0.1.zip
-```
-
-Cette URL a correctement répondu :
-
-```text
-HTTP/1.1 200 OK
-Content-Type: application/zip
-```
-
-Le Dockerfile a donc été adapté pour utiliser cette source.
-
-Cette étape a permis de vérifier que le problème ne venait pas de la variable `${DOLIBARR_VERSION}`, mais de l'URL de téléchargement utilisée.
-
-#### 5. Création du service PostgreSQL
-
-Un second service a été défini dans Docker Compose pour PostgreSQL.
-
-Version utilisée :
-
-```text
-postgres:16
-```
-
-Le conteneur créé est :
-
-```text
-sae-dolibarr-postgres
-```
-
-Le démarrage des logs PostgreSQL a permis de vérifier que la base était correctement initialisée :
-
-```text
-database system is ready to accept connections
-```
-
-PostgreSQL écoute sur le port :
-
-```text
-5432
-```
-
-Le port n'a pas besoin d'être publié sur la machine hôte pour que Dolibarr puisse communiquer avec PostgreSQL, puisque les deux services communiquent à travers le réseau Docker Compose.
-
-#### 6. Création du service Dolibarr
-
-Le conteneur Dolibarr créé est :
-
-```text
-sae-dolibarr
-```
-
-L'image construite localement est :
-
-```text
-sae-dolibarr:24.0.1
-```
-
-Vérification des conteneurs :
-
-```bash
-docker compose ps
-```
-
-Résultat obtenu :
-
-```text
-NAME                    IMAGE                 SERVICE
-sae-dolibarr            sae-dolibarr:24.0.1  dolibarr
-sae-dolibarr-postgres   postgres:16           postgres
-```
-
-Les deux conteneurs sont en fonctionnement.
-
-#### 7. Vérification des logs
-
-Les logs Docker Compose ont été consultés avec :
-
-```bash
-docker compose logs --tail=30
-```
-
-Les logs PostgreSQL indiquent que le serveur est prêt à accepter les connexions.
-
-Les logs Apache indiquent également que le serveur web démarre correctement dans le conteneur :
-
-```text
-Apache/2.4.68 (Debian) PHP/8.2.34 configured
-```
-
-Le serveur Apache fonctionne donc à l'intérieur du conteneur Dolibarr.
-
-#### 8. Vérification de l'installation de Dolibarr dans le conteneur
-
-Le contenu du répertoire web a été vérifié avec :
-
-```bash
-docker exec sae-dolibarr ls -la /var/www/html/
-```
-
-Le résultat montre :
-
-```text
-/var/www/html/
-└── dolibarr/
-```
-
-Puis le contenu de Dolibarr a été vérifié :
-
-```bash
-docker exec sae-dolibarr ls -la /var/www/html/dolibarr/
-```
-
-Le répertoire contient notamment :
-
-```text
-htdocs/
-doc/
-dev/
-scripts/
-README.md
-COPYING
-```
-
-Le répertoire principal de l'application web Dolibarr est donc :
-
-```text
-/var/www/html/dolibarr/htdocs
-```
-
-#### 9. Problème rencontré avec le DocumentRoot Apache
-
-Lors du premier test, l'accès à :
-
-```text
-http://localhost:8090
-```
-
-renvoyait :
-
-```text
-HTTP/1.1 403 Forbidden
-```
-
-L'analyse de la configuration Apache a montré que le `DocumentRoot` était configuré sur :
-
-```text
-/var/www/html/dolibarr
-```
-
-alors que les fichiers web de Dolibarr sont situés dans :
-
-```text
-/var/www/html/dolibarr/htdocs
-```
-
-La configuration Apache doit donc être adaptée afin de servir directement le répertoire `htdocs`.
-
-La configuration souhaitée est :
-
-```text
-DocumentRoot /var/www/html/dolibarr/htdocs
-```
-
-Cette modification est intégrée au travail sur le Dockerfile afin que la configuration soit automatiquement reproduite lors de la construction de l'image.
-
-#### 10. Nettoyage de l'ancien environnement Apache/Nginx
-
-L'ancien environnement de test sur la machine WSL utilisait également des services web installés directement sur le système.
-
-Un ancien service Apache était encore présent et avait précédemment rencontré un conflit sur le port 80 :
-
-```text
-Address already in use
-could not bind to address 0.0.0.0:80
-```
-
-Comme Apache doit maintenant être exécuté dans le conteneur Docker, l'ancien service Apache système a été désactivé :
-
-```bash
-sudo systemctl disable apache2
-sudo systemctl stop apache2
-```
-
-Le serveur web utilisé pour le projet est désormais celui du conteneur Docker.
-
-L'ancien environnement Nginx n'est également plus utilisé pour le projet.
-
-#### 11. Gestion du port d'accès
-
-Afin d'éviter les conflits avec les anciens services web présents sur la machine, le port du conteneur Apache est publié sur un port de la machine hôte.
-
-Configuration retenue :
-
-```text
-Machine hôte : 8090
-        ↓
-Conteneur Dolibarr : 80
-```
-
-La correspondance est donc :
-
-```text
-0.0.0.0:8090 → port 80 du conteneur
-```
-
-Vérification avec :
-
-```bash
-docker compose ps
-```
-
-Le port apparaît sous la forme :
-
-```text
-0.0.0.0:8090->80/tcp
-```
-
-L'accès à l'application est donc prévu avec :
-
-```text
-http://localhost:8090
-```
-
-#### 12. Vérification de Git et collaboration
-
-Le dépôt commun utilisé par les deux membres du binôme est :
-
-```text
-sae-dolibarr
-```
-
-La branche de travail utilisée est :
-
-```text
-test
-```
-
-Les modifications liées à la dockerisation sont versionnées dans Git afin que le binôme puisse récupérer la même configuration.
-
-Les commandes utilisées sont notamment :
-
-```bash
-git status
-git add
-git commit
-git push
-git pull
-```
-
-Une attention particulière a été portée à la sélection des fichiers avant les commits afin de ne pas envoyer par erreur des fichiers temporaires ou des fichiers de test.
-
-### État d'avancement à la fin de la séance
-
-À la fin de la séance, la première version de l'environnement Docker est fonctionnelle.
-
-Les deux services sont démarrés :
-
-```text
-┌──────────────────────────┐
-│ Docker Compose           │
-│                          │
-│  ┌────────────────────┐  │
-│  │ sae-dolibarr       │  │
-│  │ Apache + PHP       │  │
-│  │ Dolibarr 24.0.1   │  │
-│  └─────────┬──────────┘  │
-│            │              │
-│            ▼              │
-│  ┌────────────────────┐  │
-│  │ sae-dolibarr-      │  │
-│  │ postgres            │  │
-│  │ PostgreSQL 16       │  │
-│  └────────────────────┘  │
-└──────────────────────────┘
-
-
-## Séance du 08/10/2026 — Automatisation et tests
-
-### 3. Mise en place des scripts d'automatisation
-
-Afin de respecter le cahier des charges, nous avons mis en place plusieurs scripts permettant d'automatiser les principales opérations du projet.
-
-Les scripts sont regroupés dans le dossier `scripts/` :
+### 1.2 Scripts principaux
 
 ```text
 scripts/
@@ -695,81 +58,915 @@ scripts/
 └── restore.sh
 ```
 
-Ces scripts permettent d'automatiser les principales opérations du projet :
+| Script | Rôle |
+|---|---|
+| `install.sh` | construire, démarrer et initialiser l'environnement |
+| `import_csv.sh` | importer automatiquement les clients/fournisseurs |
+| `backup.sh` | sauvegarder PostgreSQL et les documents Dolibarr |
+| `restore.sh` | restaurer les données et les documents après une perte |
 
-- `install.sh` : installation et démarrage de l'environnement Dolibarr et PostgreSQL ;
-- `import_csv.sh` : importation automatique des clients et fournisseurs depuis un fichier CSV ;
-- `backup.sh` : sauvegarde de la base de données et des documents Dolibarr ;
-- `restore.sh` : restauration des données sauvegardées.
+---
 
-L'objectif est de pouvoir réaliser les opérations principales sans avoir à effectuer manuellement toutes les étapes de configuration.
+## 2. Organisation de l'équipe
 
-### 3.1 Script `install.sh`
+Le projet a été réalisé en équipe avec des responsabilités différentes mais complémentaires. Les décisions importantes, les tests et les corrections ont été partagés afin que chaque membre soit capable d'expliquer le fonctionnement général de la solution.
 
-Le script `install.sh` permet d'automatiser l'installation et le démarrage de l'environnement Docker.
+### 2.1 Abdoulaye — Chef de projet
 
-Il effectue notamment les opérations suivantes :
+Abdoulaye assure la coordination globale du projet tout en participant aux travaux techniques.
 
-- vérification de la présence de Docker et Docker Compose ;
-- chargement des variables d'environnement ;
-- construction de l'image Docker Dolibarr ;
-- démarrage des conteneurs ;
-- attente de la disponibilité de PostgreSQL ;
-- vérification de la présence de la base de données ;
-- vérification du nombre de tables Dolibarr ;
-- vérification de la présence des utilisateurs.
+Responsabilités principales :
 
-Le script peut être lancé avec :
+- analyse du cahier des charges ;
+- définition des objectifs des séances ;
+- organisation et répartition des tâches ;
+- suivi de l'avancement ;
+- maintien de la cohérence entre les différentes parties du projet ;
+- documentation ;
+- participation à l'étude de Dolibarr et de ses dépendances ;
+- suivi de la dockerisation ;
+- participation aux tests ;
+- centralisation des résultats ;
+- validation de l'état du projet avant de passer à l'étape suivante.
 
-```bash
-./scripts/install.sh
-```
+### 2.2 Amine — Architecte systèmes et réseaux
 
-Le test du script a été effectué avec succès.
+Amine prend principalement en charge l'architecture technique et l'automatisation.
 
-Le résultat obtenu a notamment permis de vérifier :
+Responsabilités principales :
+
+- étude de l'architecture Dolibarr/PostgreSQL ;
+- mise en place et analyse de Docker/Docker Compose ;
+- développement et correction des scripts Bash ;
+- travail sur `install.sh`, `import_csv.sh`, `backup.sh` et `restore.sh` ;
+- analyse de PostgreSQL et des tables Dolibarr ;
+- tests de communication entre les services ;
+- diagnostic des erreurs liées aux conteneurs, services et dépendances ;
+- tests techniques et validation du fonctionnement.
+
+### 2.3 Hoilid Zeghoubi — Administrateur systèmes et réseaux
+
+Hoilid Zeghoubi rejoint l'équipe à partir du **30/09/2026**.
+
+Son intégration s'est faite progressivement : présentation du projet, découverte de Docker et de l'architecture, reproduction des procédures, puis réalisation de tests indépendants.
+
+Responsabilités principales :
+
+- compréhension de l'architecture générale ;
+- découverte et prise en main de Docker/Docker Compose ;
+- reproduction des installations et procédures ;
+- tests des scripts sur son environnement ;
+- vérification du fonctionnement des services ;
+- validation indépendante de certaines étapes ;
+- remontée des problèmes rencontrés ;
+- participation à l'administration systèmes et réseaux.
+
+Cette répartition permet d'éviter qu'un seul membre maîtrise toute la solution : les tests réalisés par plusieurs membres servent également à vérifier la **reproductibilité** du projet.
+
+---
+
+## 3. Méthodologie de travail
+
+### 3.1 Organisation Agile
+
+Nous avons appliqué une démarche Agile simple, adaptée au temps disponible.
+
+Au début de chaque séance :
+
+1. nous faisions un point sur l'état du projet ;
+2. nous définissions les objectifs prioritaires ;
+3. les tâches étaient réparties selon les responsabilités de chacun ;
+4. les résultats étaient testés avant de poursuivre.
+
+Exemple de progression réelle :
 
 ```text
-283 tables Dolibarr
-3 utilisateurs
+Comprendre Dolibarr
+        ↓
+Installation manuelle
+        ↓
+Étude PostgreSQL / CSV
+        ↓
+Dockerisation
+        ↓
+Automatisation
+        ↓
+Tests
+        ↓
+Sauvegarde / restauration
+        ↓
+Validation finale
 ```
 
-Les deux conteneurs sont également démarrés correctement :
+Lorsqu'une difficulté bloquait une étape, l'objectif suivant était adapté. Nous n'avons donc pas cherché à tout automatiser immédiatement : l'installation manuelle a d'abord servi à comprendre les composants avant de les reproduire dans Docker.
 
-- conteneur `sae-dolibarr` : fonctionnel ;
-- conteneur `sae-dolibarr-postgres` : fonctionnel et en état `healthy`.
+### 3.2 Approche DevOps
 
-Le script affiche également l'adresse d'accès à l'application :
+La logique DevOps apparaît progressivement dans le projet :
+
+```text
+Développement
+      ↓
+Versionnement Git
+      ↓
+Automatisation Bash
+      ↓
+Dockerisation
+      ↓
+Tests
+      ↓
+Sauvegarde / PRA
+      ↓
+Intégration continue
+```
+
+Les principaux éléments mis en place sont :
+
+- Git/GitHub pour le versionnement ;
+- Dockerfile pour construire l'image Dolibarr ;
+- Docker Compose pour orchestrer Dolibarr et PostgreSQL ;
+- scripts Bash pour automatiser les opérations ;
+- volumes Docker pour la persistance ;
+- tests réguliers de l'installation et de l'import ;
+- sauvegarde et restauration ;
+- GitHub Actions pour vérifier le build de l'image.
+
+Le workflow actuel relève principalement de **l'intégration continue (CI)** : il vérifie que l'image Docker peut être construite. Il n'effectue pas de déploiement automatique.
+
+### 3.3 Versionnement et collaboration
+
+Les commandes Git utilisées régulièrement sont notamment :
+
+```bash
+git status
+git add
+git commit
+git push
+git pull
+git log --oneline
+```
+
+Le dépôt commun permet de :
+
+- conserver un historique des modifications ;
+- synchroniser les fichiers ;
+- identifier les changements apportés ;
+- exécuter le workflow GitHub Actions ;
+- centraliser la documentation.
+
+---
+
+## 4. Suivi des séances
+
+## 4.1 Séance du 22/09/2026 — Cadrage et découverte
+
+### Objectifs
+
+- prendre connaissance du sujet ;
+- lire le cahier des charges ;
+- identifier les fonctionnalités demandées ;
+- découvrir Dolibarr ;
+- définir une première organisation ;
+- réfléchir à l'architecture technique.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- lecture et synthèse du cahier des charges ;
+- identification des livrables ;
+- début de l'organisation du projet ;
+- étude générale de Dolibarr ;
+- préparation du suivi de projet.
+
+**Amine**
+
+- première étude de l'architecture technique ;
+- recherche des prérequis systèmes ;
+- étude des possibilités d'installation ;
+- première réflexion sur PostgreSQL et Docker.
+
+**Hoilid Zeghoubi**
+
+- pas encore intégré à l'équipe.
+
+### Tests / vérifications
+
+À ce stade, aucun test complet n'est réalisé : la séance est volontairement consacrée au cadrage et à la compréhension.
+
+### Résultat
+
+Une première architecture est envisagée :
+
+```text
+Dolibarr
+   |
+   v
+PostgreSQL
+```
+
+L'équipe décide de commencer par une installation manuelle avant toute automatisation.
+
+### Compétences travaillées
+
+- analyse d'un cahier des charges ;
+- découpage d'un projet technique ;
+- identification des dépendances d'une application web.
+
+---
+
+## 4.2 Séance du 23/09/2026 — Préparation de l'installation
+
+### Objectifs
+
+- approfondir la découverte de Dolibarr ;
+- comprendre ses dépendances ;
+- préparer l'installation manuelle ;
+- étudier PHP, Apache et PostgreSQL ;
+- préparer les premiers essais.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- poursuite de l'étude fonctionnelle de Dolibarr ;
+- documentation des dépendances ;
+- vérification de la cohérence avec le cahier des charges ;
+- préparation des étapes d'installation.
+
+**Amine**
+
+- étude d'Apache et PHP ;
+- préparation de l'environnement Debian/WSL ;
+- étude du rôle du SGBD ;
+- premières recherches sur PostgreSQL et Docker.
+
+### Vérifications préparatoires
+
+Commandes utilisées pour vérifier l'environnement :
+
+```bash
+php --version
+php -m
+sudo systemctl status apache2
+sudo ss -ltnp | grep ':80'
+```
+
+### Résultat
+
+Les composants nécessaires sont identifiés et l'équipe dispose d'une procédure claire pour commencer l'installation manuelle lors de la séance suivante.
+
+### Compétences travaillées
+
+- vérification des services Linux ;
+- compréhension des dépendances PHP ;
+- préparation d'un environnement avant installation.
+
+---
+
+## 4.3 Séance du 28/09/2026 — Installation manuelle et étude PostgreSQL
+
+### Objectifs
+
+- installer Dolibarr manuellement ;
+- configurer PostgreSQL ;
+- comprendre la communication entre l'application et le SGBD ;
+- observer les tables générées ;
+- commencer la réflexion sur l'import CSV.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- suivi des étapes d'installation ;
+- vérification du fonctionnement de Dolibarr ;
+- documentation des étapes importantes ;
+- observation de la structure de l'application.
+
+**Amine**
+
+- installation et configuration technique ;
+- connexion à PostgreSQL ;
+- analyse des premières tables ;
+- préparation des futurs scripts ;
+- premiers essais autour des Tiers.
+
+### Installation manuelle
+
+Dolibarr est installé sous :
+
+```text
+/var/www/html/dolibarr
+```
+
+Les documents sont placés dans :
+
+```text
+/var/lib/dolibarr/documents
+```
+
+Connexion à PostgreSQL :
+
+```bash
+psql -h localhost -p 5432 -U dolibarr -d dolibarr
+```
+
+### Analyse de la base
+
+Deux tables sont étudiées en priorité.
+
+#### `llx_user`
+
+```sql
+SELECT rowid, login, admin, statut
+FROM llx_user;
+```
+
+Rôle observé :
+
+- `rowid` : identifiant interne ;
+- `login` : identifiant de connexion ;
+- `admin` : droit administrateur ;
+- `statut` : état du compte.
+
+#### `llx_societe`
+
+```sql
+SELECT rowid, nom, client, fournisseur, status
+FROM llx_societe;
+```
+
+Cette table est centrale pour notre POC car elle contient les **Tiers**, notamment les clients et fournisseurs.
+
+### Résultat
+
+Cette séance marque le passage de la découverte à la réalisation technique. L'équipe comprend maintenant suffisamment l'installation et la base pour commencer l'automatisation.
+
+### Compétences travaillées
+
+- installation d'une application PHP ;
+- utilisation de PostgreSQL ;
+- lecture d'un schéma de base existant ;
+- compréhension du rôle des Tiers dans Dolibarr.
+
+---
+
+## 4.4 Séance du 30/09/2026 — Intégration de Hoilid Zeghoubi et dockerisation
+
+### Objectifs
+
+- intégrer Hoilid Zeghoubi au projet ;
+- lui présenter l'architecture ;
+- expliquer Docker/Docker Compose ;
+- séparer Dolibarr et PostgreSQL ;
+- créer le Dockerfile et le Compose ;
+- commencer la structuration des scripts.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- présentation du projet et du cahier des charges à Hoilid Zeghoubi ;
+- explication de l'organisation ;
+- supervision de la dockerisation ;
+- documentation des choix ;
+- suivi de l'avancement.
+
+**Amine**
+
+- explication technique de Docker ;
+- création et correction du Dockerfile ;
+- travail sur `docker-compose.yml` ;
+- tests de communication entre les services ;
+- préparation des scripts.
+
+**Hoilid Zeghoubi**
+
+- découverte de Docker et Docker Compose ;
+- compréhension de l'architecture ;
+- premières commandes Docker ;
+- reproduction de tests simples ;
+- prise en main progressive du dépôt.
+
+### Architecture Docker retenue
+
+```text
+Docker Compose
+      |
+      +---- sae-dolibarr
+      |
+      +---- sae-dolibarr-postgres
+```
+
+Le service web est exposé sur :
+
+```text
+localhost:8090 -> port 80 du conteneur
+```
+
+PostgreSQL n'a pas besoin d'être exposé sur l'hôte : Dolibarr y accède via le réseau Docker.
+
+### Healthcheck PostgreSQL
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U dolibarr -d dolibarr"]
+```
+
+Cette ligne permet de tester que PostgreSQL accepte réellement les connexions avant de considérer le service comme disponible.
+
+### Difficulté 1 — URL de téléchargement Dolibarr
+
+Une première URL utilisée dans le Dockerfile renvoyait :
+
+```text
+404 Not Found
+```
+
+Test :
+
+```bash
+wget -S --spider <URL>
+```
+
+Le test a permis d'isoler le problème : ce n'était pas la variable de version mais l'URL elle-même.
+
+La source de téléchargement a été remplacée par la source officielle Dolibarr.
+
+### Difficulté 2 — `403 Forbidden`
+
+Le conteneur démarrait, mais l'accès web renvoyait :
+
+```text
+403 Forbidden
+```
+
+Nous avons vérifié l'arborescence :
+
+```bash
+docker exec sae-dolibarr ls -la /var/www/html/dolibarr/
+```
+
+Les fichiers web se trouvent sous :
+
+```text
+/var/www/html/dolibarr/htdocs
+```
+
+Le `DocumentRoot` Apache a donc été corrigé pour pointer vers `htdocs`.
+
+### Résultat
+
+Les deux conteneurs sont séparés et l'architecture devient reproductible. Hoilid Zeghoubi comprend le principe général et commence à reproduire les commandes de son côté.
+
+### Compétences travaillées
+
+- construction d'une image Docker ;
+- réseau Docker Compose ;
+- diagnostic HTTP ;
+- configuration Apache ;
+- transmission de connaissances au sein d'une équipe.
+
+---
+
+## 4.5 Séance du 05/10/2026 — Automatisation, import et sauvegarde
+
+### Objectifs
+
+- poursuivre l'automatisation ;
+- stabiliser les scripts principaux ;
+- automatiser l'import CSV ;
+- empêcher les doublons ;
+- préparer la sauvegarde et la restauration ;
+- multiplier les tests sur plusieurs postes.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- supervision globale ;
+- vérification de la conformité au cahier des charges ;
+- documentation ;
+- suivi des tests ;
+- centralisation des résultats.
+
+**Amine**
+
+- développement et correction des scripts ;
+- tests de `install.sh` ;
+- tests de `import_csv.sh` ;
+- travail sur `backup.sh` et `restore.sh` ;
+- diagnostic des erreurs.
+
+**Hoilid Zeghoubi**
+
+- reproduction des manipulations ;
+- tests indépendants ;
+- vérification des scripts ;
+- tests Docker ;
+- remontée des erreurs rencontrées.
+
+### Installation automatique
+
+`install.sh` doit permettre de partir d'un environnement vide et de reconstruire Dolibarr.
+
+Logique :
+
+```text
+vérification Docker
+       ↓
+docker compose build
+       ↓
+docker compose up
+       ↓
+attente PostgreSQL
+       ↓
+initialisation Dolibarr
+       ↓
+création administrateur
+       ↓
+vérifications
+```
+
+Une installation validée produit notamment :
+
+```text
+Nombre de tables Dolibarr : 275
+Nombre d'utilisateurs Dolibarr : 1
+```
+
+### Import CSV
+
+Le fichier contient :
+
+```text
+3 clients
+2 fournisseurs
+```
+
+Le script lit chaque ligne puis vérifie d'abord l'adresse e-mail :
+
+```sql
+SELECT COUNT(*)
+FROM llx_societe
+WHERE email = '<email>';
+```
+
+Si le tiers existe, il n'est pas réinséré.
+
+Logique :
+
+```text
+CSV
+ |
+ v
+lecture d'une ligne
+ |
+ v
+recherche de l'e-mail
+ |
+ +---- présent ----> ignorer
+ |
+ +---- absent -----> INSERT
+```
+
+Pour un client :
+
+```text
+client = 1
+fournisseur = 0
+```
+
+Pour un fournisseur :
+
+```text
+client = 0
+fournisseur = 1
+```
+
+### Difficulté — fins de ligne CRLF/LF
+
+Erreur rencontrée :
+
+```text
+exec /usr/local/bin/dolibarr-entrypoint.sh: no such file or directory
+```
+
+Le fichier existait pourtant.
+
+Nous avons successivement vérifié :
+
+1. son chemin ;
+2. ses droits ;
+3. le shebang ;
+4. le format des fins de ligne.
+
+Commande :
+
+```bash
+grep -RIl $'\r' scripts docker
+```
+
+Le problème venait de fichiers enregistrés au format **CRLF** sous Windows, alors que les scripts étaient exécutés sous Linux.
+
+Correction :
+
+- conversion vers LF ;
+- ajout de `.gitattributes` afin de stabiliser les fins de ligne.
+
+### Sauvegarde
+
+`backup.sh` sauvegarde deux éléments :
+
+```text
+PostgreSQL -> fichier .dump
+Documents  -> archive .tar.gz
+```
+
+Le dump PostgreSQL est créé avec `pg_dump` en format custom, afin de pouvoir être restauré avec `pg_restore`.
+
+### Résultat
+
+À la fin de cette séance, les scripts principaux sont en place et plusieurs membres commencent à reproduire séparément les procédures.
+
+### Compétences travaillées
+
+- scripting Bash ;
+- import SQL ;
+- idempotence d'un import ;
+- sauvegarde PostgreSQL ;
+- compatibilité Windows/Linux ;
+- tests de reproductibilité.
+
+---
+
+## 4.6 Séance du 07/10/2026 — Validation globale et CI
+
+### Objectifs
+
+- finaliser les tests ;
+- vérifier l'installation complète ;
+- vérifier l'import ;
+- vérifier la sauvegarde/restauration ;
+- valider Docker ;
+- vérifier GitHub Actions ;
+- identifier les derniers éléments documentaires.
+
+### Répartition du travail
+
+**Abdoulaye**
+
+- supervision générale ;
+- contrôle du cahier des charges ;
+- documentation des résultats ;
+- vérification de la cohérence globale ;
+- préparation de la validation finale.
+
+**Amine**
+
+- tests techniques des scripts ;
+- vérification de l'installation ;
+- tests de l'import ;
+- tests de sauvegarde/restauration ;
+- vérification de Docker ;
+- vérification du workflow GitHub Actions.
+
+**Hoilid Zeghoubi**
+
+- reproduction des procédures ;
+- tests indépendants ;
+- vérification des conteneurs ;
+- exécution des scripts de son côté ;
+- validation de sa compréhension de l'architecture ;
+- remontée des résultats.
+
+### Vérification Docker
+
+```bash
+docker compose ps
+```
+
+Résultat attendu et obtenu lors des tests :
+
+```text
+sae-dolibarr            Up
+sae-dolibarr-postgres   Up (healthy)
+```
+
+Accès :
 
 ```text
 http://localhost:8090
 ```
 
-Le test confirme donc que l'installation et le démarrage de l'environnement peuvent être automatisés.
+### Difficulté — cohérence du port
 
-### 3.2 Script `import_csv.sh`
+Une incohérence a été identifiée entre l'URL interne configurée et le port réellement publié.
 
-Le script `import_csv.sh` permet d'automatiser l'importation des clients et fournisseurs à partir d'un fichier CSV.
-
-Le fichier utilisé contient les colonnes suivantes :
-
-```csv
-type;nom;email;telephone;adresse;code_postal;ville;pays
-```
-
-Les données importées concernent uniquement les Tiers, conformément au périmètre du projet.
-
-Le script est lancé avec :
+Vérification :
 
 ```bash
-./scripts/import_csv.sh
+docker compose config
 ```
 
-Une vérification est effectuée avant chaque insertion afin d'éviter de créer plusieurs fois le même Tiers.
+La configuration a été harmonisée sur :
 
-La détection des doublons est notamment réalisée à partir de l'adresse e-mail.
+```text
+DOLIBARR_URL_ROOT=http://localhost:8090
+```
 
-Lors du test, les cinq premiers Tiers étaient déjà présents dans la base :
+### Test anti-doublons
+
+Une seconde exécution de l'import produit :
+
+```text
+Déjà présent : Entreprise Alpha
+Déjà présent : Entreprise Beta
+Déjà présent : Entreprise Gamma
+Déjà présent : Fournisseur Delta
+Déjà présent : Fournisseur Epsilon
+```
+
+La base reste à **5 tiers**.
+
+### GitHub Actions
+
+Workflow :
+
+```text
+.github/workflows/docker-image.yml
+```
+
+Il s'exécute sur les `push` et `pull_request` vers `main`.
+
+Logique :
+
+```text
+checkout du dépôt
+       ↓
+docker build
+       ↓
+succès / échec
+```
+
+Une correction du chemin du Dockerfile a été nécessaire pendant la mise en place du workflow.
+
+Le workflow valide actuellement la **construction de l'image Docker**. Il ne réalise pas de déploiement continu.
+
+### Résultat de la séance
+
+À l'issue de la dernière séance documentée :
+
+- l'architecture Docker est stable ;
+- l'installation est automatisée ;
+- l'import CSV fonctionne ;
+- les doublons sont gérés ;
+- la sauvegarde/restauration est opérationnelle ;
+- le build Docker est vérifié par GitHub Actions ;
+- les procédures sont reproductibles par plusieurs membres.
+
+---
+
+## 5. Répartition synthétique des tâches
+
+| Membre | Rôle | Responsabilités principales |
+|---|---|---|
+| Abdoulaye | Chef de projet | coordination, cahier des charges, documentation, Docker, suivi des tests, validation |
+| Amine | Architecte systèmes/réseaux | architecture, Docker, PostgreSQL, scripts Bash, automatisation, tests techniques |
+| Hoilid Zeghoubi | Administrateur systèmes/réseaux | prise en main progressive, reproduction des procédures, tests indépendants, validation |
+
+La répartition n'est pas totalement cloisonnée : chaque membre participe aux tests et doit être capable d'expliquer l'architecture globale.
+
+---
+
+## 6. Analyse technique des éléments essentiels
+
+Cette partie reprend volontairement les lignes ou mécanismes qui peuvent être questionnés à l'oral.
+
+### 6.1 Dockerfile
+
+Image de base :
+
+```dockerfile
+FROM php:8.2-apache
+```
+
+Elle fournit PHP et Apache dans la même image, ce qui correspond au besoin de Dolibarr.
+
+Activation de `rewrite` :
+
+```dockerfile
+RUN a2enmod rewrite
+```
+
+Correction du répertoire servi par Apache :
+
+```dockerfile
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/dolibarr/htdocs|' \
+    /etc/apache2/sites-available/000-default.conf
+```
+
+Cette correction est directement liée au problème `403 Forbidden` rencontré.
+
+### 6.2 Docker Compose
+
+Dépendance au healthcheck :
+
+```yaml
+depends_on:
+  postgres:
+    condition: service_healthy
+```
+
+Cela évite de lancer l'application avant que PostgreSQL soit réellement prêt.
+
+Volumes utilisés :
+
+```yaml
+volumes:
+  postgres_data:
+  dolibarr_documents:
+```
+
+Ils permettent de conserver les données même si les conteneurs sont recréés.
+
+### 6.3 `install.sh`
+
+L'idée importante est que le script ne se contente pas de lancer Docker : il attend PostgreSQL et initialise Dolibarr.
+
+La disponibilité PostgreSQL est vérifiée avec :
+
+```text
+pg_isready
+```
+
+Puis le script vérifie le résultat de l'installation avec notamment :
+
+```text
+275 tables Dolibarr
+1 utilisateur
+```
+
+### 6.4 `import_csv.sh`
+
+Le contrôle anti-doublon est effectué avant l'insertion :
+
+```sql
+SELECT COUNT(*)
+FROM llx_societe
+WHERE email = '<email>';
+```
+
+Les chaînes sont échappées avant construction de la requête afin de limiter les erreurs provoquées par des apostrophes dans les données.
+
+Le POC reste volontairement limité aux **Tiers** conformément au cahier des charges.
+
+### 6.5 `backup.sh`
+
+Deux sauvegardes sont nécessaires :
+
+```text
+base PostgreSQL
++
+documents Dolibarr
+```
+
+Sauvegarder uniquement PostgreSQL serait insuffisant car certains fichiers utilisés par Dolibarr sont stockés dans son répertoire de documents.
+
+### 6.6 `restore.sh`
+
+La restauration :
+
+1. identifie la dernière sauvegarde cohérente ;
+2. arrête temporairement Dolibarr ;
+3. restaure PostgreSQL ;
+4. restaure les documents ;
+5. redémarre l'application ;
+6. vérifie le nombre de Tiers.
+
+---
+
+## 7. Tests et validation
+
+Les tests ne se limitent pas à constater que les fichiers existent. L'objectif est de vérifier qu'ils sont réellement exploitables.
+
+### 7.1 Service web
+
+```powershell
+curl.exe -I http://localhost:8090
+```
+
+Résultat observé :
+
+```text
+HTTP/1.1 200 OK
+Server: Apache/2.4.68 (Debian)
+X-Powered-By: PHP/8.2.34
+```
+
+### 7.2 Import CSV
+
+Résultat :
 
 ```text
 Entreprise Alpha
@@ -779,251 +976,302 @@ Fournisseur Delta
 Fournisseur Epsilon
 ```
 
-Le script les a donc détectés comme déjà existants et n'a pas créé de doublons.
-
-Un nouveau fournisseur a ensuite été ajouté avec le script :
+Soit :
 
 ```text
-Fournisseur Cisco
+3 clients
+2 fournisseurs
+5 tiers
 ```
 
-Après l'importation, la base contient au total :
+Une seconde exécution laisse toujours 5 Tiers.
+
+### 7.3 Vérification d'une sauvegarde
+
+Sauvegarde de base :
 
 ```text
-7 Tiers
+database_2026-10-08_21-50-27.dump
 ```
 
-Le test a également permis de vérifier que le script fonctionne avec des caractères particuliers présents dans les données, notamment l'apostrophe de :
+Sauvegarde documentaire :
 
 ```text
-30 rue Jeanne d'Arc
+documents_2026-10-08_21-50-27.tar.gz
 ```
 
-Le script d'importation est donc fonctionnel et peut être exécuté plusieurs fois sans provoquer de doublons sur les Tiers déjà présents.
-
-### 3.3 Vérification de l'ajout d'un Tiers
-
-Une vérification supplémentaire a été effectuée directement dans la base PostgreSQL afin de confirmer le fonctionnement de la table `llx_societe`.
-
-Un Tiers de test avait été ajouté manuellement :
-
-```text
-Entreprise Test
-```
-
-La présence des clients et fournisseurs a ensuite été vérifiée dans la table des Tiers.
-
-Cette vérification a permis de confirmer la prise en compte des différents types de Tiers et des informations associées.
-
-Le nombre total de Tiers présents dans la base est de :
-
-```text
-7
-```
-
-### 3.4 Script `backup.sh`
-
-Le script `backup.sh` permet de sauvegarder les données nécessaires à la reprise du projet.
-
-La sauvegarde porte sur deux éléments principaux :
-
-- la base de données PostgreSQL ;
-- les documents Dolibarr.
-
-Le script peut être lancé avec :
+Le dump a été contrôlé avec :
 
 ```bash
-./scripts/backup.sh
+pg_restore -l backups/database_2026-10-08_21-50-27.dump | head
 ```
 
-Lors du test du 08/10/2026, les sauvegardes suivantes ont été générées :
+Résultat :
 
 ```text
-backups/database_2026-10-08_15-51-19.dump
-backups/documents_2026-10-08_15-51-19.tar.gz
+dbname: dolibarr
+TOC Entries: 2595
+Format: CUSTOM
+Dumped from database version: 16.15
 ```
 
-La sauvegarde de la base de données a une taille d'environ :
-
-```text
-1,1 Mo
-```
-
-La sauvegarde des documents a une taille d'environ :
-
-```text
-320 octets
-```
-
-Le script affiche :
-
-```text
-Sauvegarde terminée avec succès
-```
-
-Le test confirme donc que les données PostgreSQL ainsi que les documents Dolibarr peuvent être sauvegardés automatiquement.
-
-### 3.5 Script `restore.sh`
-
-Un script `restore.sh` a également été préparé afin de permettre la restauration des données sauvegardées.
-
-Son objectif est de permettre de reconstruire l'environnement à partir des sauvegardes réalisées par `backup.sh`.
-
-Le principe prévu est le suivant :
-
-```text
-Environnement Dolibarr
-        │
-        ▼
-     backup.sh
-        │
-        ├──► Sauvegarde PostgreSQL
-        │
-        └──► Sauvegarde documents
-                    │
-                    ▼
-              restore.sh
-                    │
-                    ▼
-        Environnement restauré
-```
-
-Le script de restauration est présent dans le projet et préparé pour le test du PRA.
-
-Cependant, le test complet de restauration sur un environnement remis à zéro n'a pas encore été finalisé lors de cette séance.
-
-La sauvegarde est donc validée, mais le processus complet de restauration doit encore être testé afin de valider définitivement le PRA.
-
-### 4. Tests complémentaires
-
-Plusieurs vérifications ont également été effectuées après la mise en place des scripts.
-
-La présence des extensions PostgreSQL de PHP a été vérifiée avec :
+L'archive documentaire a été vérifiée avec :
 
 ```bash
-docker exec sae-dolibarr php -m | grep -Ei 'pgsql|pdo'
+tar -tzf backups/documents_2026-10-08_21-50-27.tar.gz | head
 ```
 
-Le résultat obtenu est :
+Elle contient notamment :
 
 ```text
-PDO
-pdo_pgsql
-pdo_sqlite
-pgsql
+documents/
+documents/export/
+documents/import/
+documents/societe/
+documents/agenda/
+documents/install.lock
 ```
 
-Les extensions nécessaires sont donc disponibles.
+### 7.4 Validation du PRA
 
-La communication entre Dolibarr et PostgreSQL a également été vérifiée grâce au fonctionnement de l'interface Dolibarr et aux requêtes effectuées sur la base de données.
+La validation complète du PRA a été réalisée lors de la phase finale de vérification du projet, sans créer une séance supplémentaire dans ce suivi.
 
-L'accès à Dolibarr est disponible à l'adresse :
-
-```text
-http://localhost:8090
-```
-
-Les différentes vérifications effectuées permettent de confirmer le fonctionnement de l'environnement Docker et la communication entre les deux conteneurs.
-
-### 5. Tests du workflow CI/CD avec GitHub Actions
-
-Un workflow GitHub Actions a été mis en place afin de vérifier automatiquement la construction de l'image Docker.
-
-Le workflow se trouve dans :
-
-```text
-.github/workflows/docker-image.yml
-```
-
-Une première version utilisait :
+Simulation d'une perte de l'environnement :
 
 ```bash
-docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+docker compose down -v
 ```
 
-Cette commande provoquait une erreur car le Dockerfile du projet se trouve dans :
+Réinstallation :
+
+```bash
+bash scripts/install.sh
+```
+
+Résultat :
 
 ```text
-docker/dolibarr/Dockerfile
+Nombre de tables Dolibarr : 275
+Nombre d'utilisateurs Dolibarr : 1
+PostgreSQL : healthy
+Dolibarr : accessible sur le port 8090
 ```
 
-Le workflow a donc été corrigé afin d'utiliser le chemin réel du Dockerfile :
+Restauration :
 
-```yaml
-- name: Build the Docker image
-  run: |
-    docker build ./docker/dolibarr \
-      --file ./docker/dolibarr/Dockerfile \
-      --tag sae-dolibarr:${{ github.sha }}
+```bash
+bash scripts/restore.sh
 ```
 
-Cette modification permet au workflow GitHub Actions de construire l'image Docker à partir du Dockerfile utilisé par le projet.
+Résultat :
 
-Les tests du workflow CI/CD ont permis de vérifier l'intégration de la construction de l'image Docker dans GitHub Actions.
+```text
+Base PostgreSQL restaurée.
+Documents restaurés.
+Nombre de tiers restaurés : 5
+Restauration terminée avec succès.
+```
 
-### 6. État du projet à la fin de la séance
+Le PRA démontre donc que l'environnement peut être reconstruit après suppression des volumes et que les données peuvent être récupérées.
 
-| Élément | État |
+---
+
+## 8. Analyse de la base Dolibarr
+
+L'installation automatisée a généré **275 tables** dans notre environnement.
+
+Nous n'avons pas étudié les 275 tables individuellement : le POC étant limité aux Tiers, nous avons concentré l'analyse sur les tables utiles au projet.
+
+### 8.1 `llx_user`
+
+Cette table contient les utilisateurs de Dolibarr.
+
+Champs étudiés :
+
+| Champ | Utilité |
 |---|---|
-| Dockerisation de Dolibarr | ✅ Réalisée |
-| Conteneur PostgreSQL | ✅ Fonctionnel |
-| Conteneur Dolibarr | ✅ Fonctionnel |
-| Communication Dolibarr/PostgreSQL | ✅ Fonctionnelle |
-| `install.sh` | ✅ Testé |
-| `import_csv.sh` | ✅ Testé |
-| Détection des doublons | ✅ Testée |
-| Import des clients/fournisseurs | ✅ Testé |
-| Ajout d'un Tiers | ✅ Testé |
-| `backup.sh` | ✅ Testé |
-| Sauvegarde PostgreSQL | ✅ Testée |
-| Sauvegarde des documents | ✅ Testée |
-| `restore.sh` | ⚠️ Préparé, test PRA à finaliser |
-| Workflow GitHub Actions | ✅ Mis en place et testé |
+| `rowid` | identifiant interne |
+| `login` | identifiant de connexion |
+| `admin` | indique si le compte est administrateur |
+| `statut` | indique l'état du compte |
 
-### 7. Bilan de la séance
+### 8.2 `llx_societe`
 
-Cette séance a permis de finaliser la mise en place des principaux scripts d'automatisation du projet.
+Cette table contient les Tiers.
 
-Le script `install.sh` permet désormais d'automatiser le démarrage et la vérification de l'environnement Dolibarr et PostgreSQL.
+Correspondance avec le CSV :
 
-Le script `import_csv.sh` permet d'importer automatiquement les clients et fournisseurs dans Dolibarr tout en détectant les Tiers déjà présents afin d'éviter les doublons.
+| CSV | Colonne Dolibarr |
+|---|---|
+| `nom` | `nom` |
+| `adresse` | `address` |
+| `code_postal` | `zip` |
+| `ville` | `town` |
+| `telephone` | `phone` |
+| `email` | `email` |
+| type client | `client` |
+| type fournisseur | `fournisseur` |
+| code client | `code_client` |
+| code fournisseur | `code_fournisseur` |
 
-Le script `backup.sh` permet de sauvegarder la base PostgreSQL ainsi que les documents Dolibarr. La génération des deux fichiers de sauvegarde a été vérifiée avec succès.
+C'est cette table que `import_csv.sh` remplit directement pour notre POC.
 
-Le script `restore.sh` est également présent et préparé afin de permettre la restauration de l'environnement. Cependant, le test complet du PRA sur un environnement remis à zéro reste à réaliser.
+---
 
-Enfin, le workflow GitHub Actions a été corrigé afin de prendre en compte l'emplacement réel du Dockerfile dans le projet et de permettre la construction automatique de l'image Docker.
+## 9. Difficultés rencontrées et démarche de résolution
 
-<<<<<<< Updated upstream
-À la fin de la séance, les principales fonctionnalités d'installation, d'importation et de sauvegarde sont donc opérationnelles. 
-=======
-La prochaine étape sera donc de stabiliser l'image Docker Dolibarr et le fichier `docker-compose.yml`, puis de commencer l'automatisation de l'importation des données et des sauvegardes.
+| Problème | Recherche / essais réalisés | Correction | Ce que nous avons appris |
+|---|---|---|---|
+| URL Dolibarr en 404 | test HTTP avec `wget --spider` | utilisation de la source officielle | vérifier une dépendance avant de modifier le code |
+| `403 Forbidden` | inspection de l'arborescence et du `DocumentRoot` | Apache pointe vers `htdocs` | diagnostic Apache/application |
+| Entrypoint introuvable | chemin, droits, shebang, fins de ligne | CRLF → LF + `.gitattributes` | compatibilité Windows/Linux |
+| Docker/WSL | vérifications côté Windows et WSL | utilisation cohérente de Docker Desktop/WSL | différence hôte / environnement Linux |
+| 8080 / 8090 incohérents | `docker compose config`, `curl` | configuration finale sur 8090 | lecture et validation d'une configuration |
+| Risque de doublons CSV | seconde exécution de l'import | recherche par e-mail avant `INSERT` | rendre un import réexécutable |
+| Sauvegarde potentiellement inutilisable | `pg_restore -l`, `tar -tzf` | contrôle avant restauration | une sauvegarde doit être testée |
+| Reprise après perte | suppression volontaire des volumes | `install.sh` + `restore.sh` | principe concret d'un PRA |
+| Workflow Docker | vérification des chemins dans le dépôt | correction du chemin du Dockerfile | fonctionnement d'une CI |
 
+---
 
-# Suivi du projet SAE-Dolibarr
+## 10. Captures à intégrer
 
-## Séance du 08/10/2026
+Les captures doivent servir de **preuves techniques** et non simplement d'illustration.
 
-### Objectifs de la séance
+Dossier conseillé :
 
-- Finaliser et tester l'installation automatisée de Dolibarr.
-- Vérifier le fonctionnement des conteneurs Docker.
-- Tester l'import automatisé des données CSV.
-- Vérifier l'ajout et la gestion des Tiers.
-- Tester le mécanisme de sauvegarde.
-- Préparer les tests de restauration et de PRA.
+```text
+docs/captures/
+```
 
-### Travaux réalisés
+Captures pertinentes :
 
-#### 1. Vérification de l'environnement Docker
+| Capture | Ce qu'elle prouve |
+|---|---|
+| `01-docker-compose-ps.png` | deux conteneurs actifs, PostgreSQL `healthy`, port `8090` |
+| `02-tiers-dolibarr.png` | les cinq Tiers visibles dans Dolibarr |
+| `03-import-sans-doublons.png` | deuxième import avec `Déjà présent` |
+| `04-base-dolibarr.png` | requête sur `llx_user` / `llx_societe` ou nombre de tables |
+| `05-pra-restauration.png` | `Nombre de tiers restaurés : 5` |
+| `06-github-actions.png` | workflow GitHub Actions réussi |
 
-Les deux conteneurs du projet ont été démarrés avec Docker Compose :
+Exemple :
 
-- `sae-dolibarr`
-- `sae-dolibarr-postgres`
+```markdown
+![Validation du PRA](docs/captures/05-pra-restauration.png)
+```
 
-La commande suivante a permis de vérifier leur état :
+Il n'est pas nécessaire de capturer chaque commande. Une capture est conservée lorsqu'elle apporte une preuve utile à l'évaluation.
+
+---
+
+## 11. Sources techniques et traçabilité
+
+Les sources indiquées dans le dépôt doivent correspondre aux ressources réellement utilisées.
+
+### Sources principales
+
+- Dolibarr : <https://github.com/Dolibarr/dolibarr>
+- Téléchargements Dolibarr : <https://www.dolibarr.org/downloads.php>
+- Dockerfile : <https://docs.docker.com/reference/dockerfile/>
+- Docker Compose : <https://docs.docker.com/reference/compose-file/>
+- PostgreSQL 16 — `pg_dump` : <https://www.postgresql.org/docs/16/app-pgdump.html>
+- PostgreSQL 16 — `pg_restore` : <https://www.postgresql.org/docs/16/app-pgrestore.html>
+- PostgreSQL — `pg_isready` : <https://www.postgresql.org/docs/16/app-pg-isready.html>
+- GitHub Actions : <https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions>
+- Git : <https://git-scm.com/docs>
+- supports de cours Git/GitHub utilisés dans le cadre du BUT3.
+
+Une assistance IA a été utilisée ponctuellement comme **outil d'aide au diagnostic, à la recherche de pistes et à la relecture**. Les solutions retenues ont ensuite été vérifiées, testées et adaptées dans l'environnement du projet.
+
+### En-tête à prévoir dans les fichiers techniques
+
+Conformément à la consigne de l'enseignant, les fichiers techniques doivent indiquer leurs sources.
+
+Exemple pour un script Bash :
 
 ```bash
-docker compose ps
->>>>>>> Stashed changes
+#!/bin/bash
+# SAE 51 - Dolibarr
+# Rôle : import automatisé des Tiers.
+# Sources :
+# - Documentation PostgreSQL : https://www.postgresql.org/docs/16/
+# - Documentation Dolibarr : https://github.com/Dolibarr/dolibarr
+# - Supports de cours BUT3 pour Git/GitHub
+# - Assistance IA ponctuelle pour diagnostic/relecture ; solution testée et adaptée par l'équipe.
+```
+
+Les sources doivent être adaptées fichier par fichier : il ne faut pas déclarer une documentation qui n'a pas réellement servi au fichier concerné.
+
+---
+
+## 12. État d'avancement final
+
+| Fonctionnalité | État | Validation |
+|---|---|---|
+| Installation manuelle | ✅ Terminée | Dolibarr et PostgreSQL compris |
+| Dockerfile | ✅ Terminé | image construite |
+| Docker Compose | ✅ Terminé | 2 services fonctionnels |
+| `install.sh` | ✅ Terminé | 275 tables, admin créé |
+| Import CSV | ✅ Terminé | 5 Tiers importés |
+| Anti-doublons | ✅ Terminé | deuxième import sans duplication |
+| `backup.sh` | ✅ Terminé | dump + archive documents |
+| `restore.sh` | ✅ Terminé | 5 Tiers restaurés |
+| PRA | ✅ Validé | destruction + reconstruction + restauration |
+| GitHub Actions | ✅ Fonctionnel | build Docker validé |
+| Documentation | 🟡 Finalisation | captures, README et en-têtes de sources |
+
+---
+
+## 13. Travaux restant à finaliser
+
+La partie technique principale est terminée. Les derniers travaux concernent essentiellement le rendu :
+
+- intégrer les captures de preuve dans `docs/captures/` ;
+- finaliser le `README.md` pour qu'un enseignant puisse cloner et exécuter le projet ;
+- vérifier les en-têtes de sources de chaque script, Dockerfile et workflow ;
+- relire les rôles et contributions de chaque membre ;
+- préparer la démonstration orale : installation, import, sauvegarde/restauration et explication des problèmes rencontrés.
+
+---
+
+## 14. Bilan
+
+Ce projet ne s'est pas limité à obtenir un Dolibarr fonctionnel. Il nous a surtout permis de comprendre comment passer d'une installation manuelle à une solution reproductible et testable.
+
+Nous avons dû :
+
+- comprendre une application existante ;
+- analyser sa base PostgreSQL ;
+- séparer l'application et le SGBD ;
+- automatiser les opérations ;
+- diagnostiquer plusieurs erreurs réelles ;
+- vérifier la reproductibilité sur plusieurs environnements ;
+- sauvegarder puis reconstruire complètement la solution ;
+- mettre en place une première intégration continue.
+
+La progression de Hoilid Zeghoubi à partir du 30/09 a également servi de test de transmission : une personne qui n'avait pas participé au début du projet a progressivement pu comprendre l'architecture puis reproduire les procédures.
+
+La chaîne complète validée est :
+
+```text
+Installation
+    ↓
+Dockerisation
+    ↓
+Automatisation
+    ↓
+Import de 5 Tiers
+    ↓
+Sauvegarde
+    ↓
+Suppression de l'environnement
+    ↓
+Réinstallation
+    ↓
+Restauration
+    ↓
+5 Tiers récupérés
+```
+
+Le projet est donc techniquement fonctionnel et, surtout, les choix, erreurs, tests et corrections peuvent être expliqués par l'équipe.

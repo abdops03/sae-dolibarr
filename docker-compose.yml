@@ -42,7 +42,7 @@ services:
     # Variables utilisées par docker-entrypoint.sh
     # pour générer automatiquement conf.php
     environment:
-      DOLIBARR_URL_ROOT: "http://localhost:8080"
+      DOLIBARR_URL_ROOT: "http://localhost:8090"
 
       DOLIBARR_DB_HOST: "postgres"
       DOLIBARR_DB_PORT: "5432"
