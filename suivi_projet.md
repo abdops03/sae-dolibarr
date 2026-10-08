@@ -677,7 +677,6 @@ Les deux services sont démarrés :
 │  │ PostgreSQL 16       │  │
 │  └────────────────────┘  │
 └──────────────────────────┘
-```
 
 ## Séance du 08/10/2026 — Automatisation et tests
 
@@ -873,3 +872,5 @@ Les données peuvent être sauvegardées avec :
 
 Une procédure de restauration a également été préparée avec :
 ./scripts/restore.sh
+```
+
