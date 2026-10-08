@@ -44,7 +44,7 @@ Le script `install.sh` utilise `DOLIBARR_ADMIN_PASSWORD`.
 Créer un fichier `.env` local à la racine si nécessaire :
 
 ``` env
-DOLIBARR_ADMIN_PASSWORD=VotreMotDePasse
+DOLIBARR_ADMIN_PASSWORD=admin
 DOLIBARR_ADMIN_LOGIN=admin
 ```
 
@@ -336,9 +336,6 @@ depuis un CSV ; - la séparation Dolibarr / SGBD dans Docker ; - la
 sauvegarde de la base et des documents ; - la préparation du processus
 de restauration ; - la documentation ; - l'automatisation des
 vérifications avec GitHub Actions.
-
-Le projet est un **POC** limité au périmètre des Tiers et n'est pas
-présenté comme une installation de production.
 
 ## 20. Liens
 
