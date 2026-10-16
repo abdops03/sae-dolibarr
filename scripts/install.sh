@@ -24,6 +24,11 @@ DOLIBARR_CONTAINER="sae-dolibarr"
 # docker compose utilisent le bon docker-compose.yml.
 cd "$PROJECT_DIR"
 
+echo "Chemin du script : $0"
+echo "Dossier scripts : $SCRIPT_DIR"
+echo "Dossier projet : $PROJECT_DIR"
+echo "Répertoire actuel : $(pwd)"
+
 
 # ============================================================
 # Chargement des variables sensibles
