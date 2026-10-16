@@ -1214,4 +1214,65 @@ Restauration
 5 Tiers récupérés
 ```
 
-Le projet est donc techniquement fonctionnel et, surtout, les choix, erreurs, tests et corrections peuvent être expliqués par l'équipe.
+Le projet est donc techniquement fonctionnel    ↓
+Suppression de l'environnement
+    ↓
+Réinstallation
+    ↓
+Restauration
+    ↓
+5 Tiers récupérés
+```
+
+
+Le projet est donc techniquement fonctionnel et, surtout, les choix
+La prochaine étape sera donc de stabiliser l'image Docker Dolibarr 
+
+
+# Suivi du projet SAE-Dolibarr
+
+## Séance du 08/10/2026
+
+### Objectifs de la séance
+
+- Finaliser et tester l'installation automatisée de Dolibarr.
+- Vérifier le fonctionnement des conteneurs Docker.
+- Tester l'import automatisé des données CSV.
+- Vérifier l'ajout et la gestion des Tiers.
+- Tester le mécanisme de sauvegarde.
+- Préparer les tests de restauration et de PRA.
+
+### Travaux réalisés
+
+#### 1. Vérification de lnnel et, surtout, les choixc, erreurs, tests et corrections peuvent être expliqués par l'équipe.
+=======
+La prochaine étape sera donc de stabiliser l'image Docker Dolibarr et le fichier `docker-compose.yml`, puis de commencer l'automatisation de l'importation des données et des sauvegardes.
+
+
+# Suivi du projet SAE-Dolibarr
+
+## Séance du 08/10/2026
+
+### Objectifs de la séance
+
+- Finaliser et tester l'installation automatisée de Dolibarr.
+- Vérifier le fonctionnement des conteneurs Docker.
+- Tester l'import automatisé des données CSV.
+- Vérifier l'ajout et la gestion des Tiers.
+- Tester le mécanisme de sauvegarde.
+- Préparer les tests de restauration et de PRA.
+
+### Travaux réalisés
+
+#### 1. Vérification de l'environnement Docker
+
+Les deux conteneurs du projet ont été démarrés avec Docker Compose :
+
+- `sae-dolibarr`
+- `sae-dolibarr-postgres`
+
+La commande suivante a permis de vérifier leur état :
+
+```bash
+docker compose ps
+>>>>>>> Stashed changes
